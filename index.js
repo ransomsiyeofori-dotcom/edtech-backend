@@ -5,6 +5,7 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const User = require("./models/User");
+const transporter = require("./email");
 
 const app = express();
 
@@ -185,6 +186,48 @@ app.get("/profile", verifyToken, async (req, res) => {
     res.status(200).json({ success: true, user });
   } catch (error) {
     res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+/*---------------Reset password route--------------*/
+app.post("/request-otp", async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    const otp = Math.floor(
+      100000 + Math.random() * 900000
+    ).toString();
+
+    user.resetOtp = otp;
+    user.resetOtpExpires = Date.now() + 10 * 60 * 1000;
+
+    await user.save();
+
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: "Password Reset OTP",
+      text: `Your OTP is ${otp}. It expires in 10 minutes.`,
+    });
+
+    return res.json({
+      message: "OTP sent successfully",
+    });
+
+  } catch (error) {
+    console.error("OTP ERROR:", error);
+
+    return res.status(500).json({
+      message: "Server error",
+    });
   }
 });
 
