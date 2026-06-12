@@ -189,12 +189,15 @@ app.get("/profile", verifyToken, async (req, res) => {
   }
 });
 
+
 /*---------------Reset password route--------------*/
+
 app.post("/request-otp", async (req, res) => {
   try {
     const { email } = req.body;
-
     const user = await User.findOne({ email });
+console.log("ROUTE HIT");
+console.log("BODY:", req.body);
 
     if (!user) {
       return res.status(404).json({
@@ -223,12 +226,14 @@ app.post("/request-otp", async (req, res) => {
     });
 
   } catch (error) {
-    console.error("OTP ERROR:", error);
+  console.log("🔥 FULL ERROR START 🔥");
+  console.error(error);
+  console.log("🔥 FULL ERROR END 🔥");
 
-    return res.status(500).json({
-      message: "Server error",
-    });
-  }
+  return res.status(500).json({
+    message: error.message || "Server error",
+  });
+}
 });
 
 /* ------------------- DATABASE & SERVER LIFECYCLE ------------------- */
