@@ -213,17 +213,26 @@ console.log("BODY:", req.body);
     user.resetOtpExpires = Date.now() + 10 * 60 * 1000;
 
     await user.save();
-console.log("Before sendMail");
-/*
-await transporter.sendMail({
-  from: process.env.EMAIL_USER,
-  to: email,
-  subject: "Password Reset OTP",
-  text: `Your OTP is ${otp}. It expires in 10 minutes.`,
-});
-*/
+    
+    try {
+  console.log("Before sendMail");
 
-console.log("After sendMail");
+  const info = await transporter.sendMail({
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: "Password Reset OTP",
+    text: `Your OTP is ${otp}. It expires in 10 minutes.`,
+  });
+
+  console.log("MAIL SENT:", info.messageId);
+  console.log("After sendMail");
+
+} catch (mailError) {
+  console.error("MAIL ERROR:", mailError);
+  return res.status(500).json({
+    message: mailError.message,
+  });
+}
     
     return res.json({
       message: "OTP sent successfully",
