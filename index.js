@@ -5,7 +5,7 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const User = require("./models/User");
-const transporter = require("./email");
+const resend = require("./email");
 
 const app = express();
 
@@ -195,9 +195,11 @@ app.get("/profile", verifyToken, async (req, res) => {
 app.post("/request-otp", async (req, res) => {
   try {
     const { email } = req.body;
+
+    console.log("ROUTE HIT");
+    console.log("BODY:", req.body);
+
     const user = await User.findOne({ email });
-console.log("ROUTE HIT");
-console.log("BODY:", req.body);
 
     if (!user) {
       return res.status(404).json({
@@ -213,40 +215,42 @@ console.log("BODY:", req.body);
     user.resetOtpExpires = Date.now() + 10 * 60 * 1000;
 
     await user.save();
-    
+
+    // EMAIL SENDING
     try {
-  console.log("Before sendMail");
+      console.log("Before email send");
 
-  const info = await transporter.sendMail({
-    from: process.env.EMAIL_USER,
-    to: email,
-    subject: "Password Reset OTP",
-    text: `Your OTP is ${otp}. It expires in 10 minutes.`,
-  });
+const result = await resend.emails.send({
+  from: "onboarding@resend.dev",
+  to: email,
+  subject: "Password Reset OTP",
+  html: `<p>Your OTP is <b>${otp}</b>. It expires in 10 minutes.</p>`,
+});
 
-  console.log("MAIL SENT:", info.messageId);
-  console.log("After sendMail");
+      console.log("EMAIL SENT:", result);
+      console.log("After email send");
 
-} catch (mailError) {
-  console.error("MAIL ERROR:", mailError);
-  return res.status(500).json({
-    message: mailError.message,
-  });
-}
-    
+    } catch (mailError) {
+      console.error("MAIL ERROR:", mailError);
+
+      return res.status(500).json({
+        message: mailError.message || "Email sending failed",
+      });
+    }
+
     return res.json({
       message: "OTP sent successfully",
     });
 
   } catch (error) {
-  console.log("🔥 FULL ERROR START 🔥");
-  console.error(error);
-  console.log("🔥 FULL ERROR END 🔥");
+    console.log("🔥 FULL ERROR START 🔥");
+    console.error(error);
+    console.log("🔥 FULL ERROR END 🔥");
 
-  return res.status(500).json({
-    message: error.message || "Server error",
-  });
-}
+    return res.status(500).json({
+      message: error.message || "Server error",
+    });
+  }
 });
 
 /* ------------------- DATABASE & SERVER LIFECYCLE ------------------- */
