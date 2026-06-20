@@ -5,6 +5,7 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const User = require("./models/User");
+const authRoutes = require("./routes/auth");
 const resend = require("./email");
 
 const app = express();
@@ -12,6 +13,7 @@ const app = express();
 /* -------------------------- MIDDLEWARE -------------------------- */
 app.use(express.json());
 app.use(cors());
+app.use("/auth", authRoutes);
 
 const verifyToken = (req, res, next) => {
   const authHeader = req.headers.authorization;
