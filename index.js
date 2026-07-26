@@ -6,6 +6,8 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const User = require("./models/User");
 const authRoutes = require("./routes/auth");
+const contactRoute = require("./routes/contactRoute");
+
 const resend = require("./email");
 
 const app = express();
@@ -14,6 +16,7 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 app.use("/auth", authRoutes);
+app.use("/api", contactRoute);
 
 const verifyToken = (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -221,7 +224,6 @@ app.post("/request-otp", async (req, res) => {
     // EMAIL SENDING
     try {
       console.log("Before email send");
-
 const result = await resend.emails.send({
   from: "onboarding@resend.dev",
   to: email,
